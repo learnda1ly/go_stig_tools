@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"os"
 )
 
 type Checklist struct {
-	Asset
+	Asset Asset   `xml:"ASSET"`
+	Stigs []Istig `xml:"STIGS>iSTIG"`
 }
 
 type Asset struct {
@@ -25,25 +27,22 @@ type Asset struct {
 	WebDBInstance string `xml:"WEB_DB_INSTANCE"`
 }
 
-var blob = `
-	<ASSET>
-		<ROLE>None</ROLE>
-		<ASSET_TYPE>Computing</ASSET_TYPE>
-		<MARKING>CUI</MARKING>
-		<HOST_NAME></HOST_NAME>
-		<HOST_IP></HOST_IP>
-		<HOST_MAC></HOST_MAC>
-		<HOST_FQDN></HOST_FQDN>
-		<TARGET_COMMENT></TARGET_COMMENT>
-		<TECH_AREA></TECH_AREA>
-		<TARGET_KEY>2921</TARGET_KEY>
-		<WEB_OR_DATABASE>false</WEB_OR_DATABASE>
-		<WEB_DB_SITE></WEB_DB_SITE>
-		<WEB_DB_INSTANCE></WEB_DB_INSTANCE>
-	</ASSET>`
+type Istig struct {
+	StigInfo StigInfo `xml:"STIG_INFO"`
+	Vuln     []Vuln   `xml:"VULN"`
+}
 
 type StigInfo struct {
 	SiData []SiData `xml:"SI_DATA"`
+}
+
+type Vuln struct {
+	StigData              []StigData `xml:"STIG_DATA"`
+	Status                string     `xml:"STATUS"`
+	FindingDetails        string     `xml:"FINDING_DETAILS"`
+	Comments              string     `xml:"COMMENTS"`
+	SeverityOverride      string     `xml:"SEVERITY_OVERRIDE"`
+	SeverityJustification string     `xml:"SEVERITY_JUSTIFICATION"`
 }
 
 type SiData struct {
@@ -51,67 +50,36 @@ type SiData struct {
 	SidData string `xml:"SID_DATA"`
 }
 
-var anotherBlob = `
-			<STIG_INFO>
-				<SI_DATA>
-					<SID_NAME>version</SID_NAME>
-					<SID_DATA>2</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>classification</SID_NAME>
-					<SID_DATA>UNCLASSIFIED</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>customname</SID_NAME>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>stigid</SID_NAME>
-					<SID_DATA>RHEL_8_STIG</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>description</SID_NAME>
-					<SID_DATA>This Security Technical Implementation Guide is published as a tool to improve the security of Department of Defense (DOD) information systems. The requirements are derived from the National Institute of Standards and Technology (NIST) 800-53 and related documents. Comments or proposed revisions to this document should be sent via email to the following address: disa.stig_spt@mail.mil.</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>filename</SID_NAME>
-					<SID_DATA>U_RHEL_8_STIG_V2R1_Manual-xccdf.xml</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>releaseinfo</SID_NAME>
-					<SID_DATA>Release: 1 Benchmark Date: 24 Oct 2024</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>title</SID_NAME>
-					<SID_DATA>Red Hat Enterprise Linux 8 Security Technical Implementation Guide</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>uuid</SID_NAME>
-					<SID_DATA>5ac8fc68-2b0e-4907-9f2e-caf02973464b</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>notice</SID_NAME>
-					<SID_DATA>terms-of-use</SID_DATA>
-				</SI_DATA>
-				<SI_DATA>
-					<SID_NAME>source</SID_NAME>
-					<SID_DATA>STIG.DOD.MIL</SID_DATA>
-				</SI_DATA>
-			</STIG_INFO>`
+type StigData struct {
+	VulnAttribute string `xml:"VULN_ATTRIBUTE"`
+	AttributeData string `xml:"ATTRIBUTE_DATA"`
+}
+
+func (checklist *Checklist) countByStatus() map[string]int {
+	statusCounts := make(map[string]int)
+	for _, vuln := range checklist.Stigs[0].Vuln {
+		if statusCounts[vuln.Status] == 0 {
+			statusCounts[vuln.Status] = 1
+		} else {
+			statusCounts[vuln.Status]++
+		}
+	}
+	return statusCounts
+}
 
 func main() {
 	var checklist Checklist
 
-	if err := xml.Unmarshal([]byte(blob), &checklist); err != nil {
-		fmt.Errorf("Something went wrong with xml unmarshal: %v", err)
-	}
-	fmt.Printf("%v\n", checklist.Asset)
-
-	var stigInfo StigInfo
-	if err := xml.Unmarshal([]byte(anotherBlob), &stigInfo); err != nil {
-		fmt.Errorf("Something went wrong with xml unmarshal: %v", err)
+	data, err := os.ReadFile("test_ckl.ckl")
+	if err != nil {
+		_ = fmt.Errorf("something went wrong with file read: %v", err)
 	}
 
-	for _, siDatum := range stigInfo.SiData {
-		fmt.Printf("%s: %s\n", siDatum.SidName, siDatum.SidData)
+	if err := xml.Unmarshal([]byte(data), &checklist); err != nil {
+		_ = fmt.Errorf("something went wrong with xml unmarshal: %v", err)
 	}
+
+	statusCounts := checklist.countByStatus()
+
+	fmt.Printf("Open: %d Not Reviewed: %d Not Applicable: %d Not a Finding: %d\n", statusCounts["Open"], statusCounts["Not_Reviewed"], statusCounts["Not_Applicable"], statusCounts["NotAFinding"])
 }
