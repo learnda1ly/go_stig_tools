@@ -7,8 +7,9 @@ import (
 )
 
 type Checklist struct {
-	Asset Asset   `xml:"ASSET"`
-	Stigs []Istig `xml:"STIGS>iSTIG"`
+	XMLName xml.Name `xml:"CHECKLIST"`
+	Asset   Asset    `xml:"ASSET"`
+	Stigs   []Istig  `xml:"STIGS>iSTIG"`
 }
 
 type Asset struct {
@@ -67,11 +68,30 @@ func (checklist *Checklist) countByStatus() map[string]int {
 	return statusCounts
 }
 
+func (checklist *Checklist) exportToXML() error {
+	xmlData, err := xml.MarshalIndent(checklist, "", "\t")
+	if err != nil {
+		return fmt.Errorf("something went wrong with xml marshal: %v", err)
+	}
+
+	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<!--DISA STIG Viewer :: 2.18-->
+`)
+
+	data = append(data, xmlData...)
+
+	err = os.WriteFile("output.ckl", data, 0644)
+	if err != nil {
+		return fmt.Errorf("something went wrong with file write: %v", err)
+	}
+	return nil
+}
+
 func main() {
 	args := os.Args
 
 	if len(args) < 2 {
-		_ = fmt.Errorf("usage: %s <ckl_file>", args[0])
+		fmt.Fprintf(os.Stderr, "usage: %s <ckl_file>\n", args[0])
 		return
 	}
 
@@ -79,14 +99,21 @@ func main() {
 
 	data, err := os.ReadFile(args[1])
 	if err != nil {
-		_ = fmt.Errorf("something went wrong with file read: %v", err)
+		fmt.Fprintf(os.Stderr, "something went wrong with file read: %v\n", err)
+		os.Exit(1)
 	}
 
 	if err := xml.Unmarshal([]byte(data), &checklist); err != nil {
-		_ = fmt.Errorf("something went wrong with xml unmarshal: %v", err)
+		fmt.Fprintf(os.Stderr, "something went wrong with xml unmarshal: %v\n", err)
+		os.Exit(1)
 	}
 
 	statusCounts := checklist.countByStatus()
 
 	fmt.Printf("Open: %d Not Reviewed: %d Not Applicable: %d Not a Finding: %d\n", statusCounts["Open"], statusCounts["Not_Reviewed"], statusCounts["Not_Applicable"], statusCounts["NotAFinding"])
+
+	if err := checklist.exportToXML(); err != nil {
+		fmt.Fprintf(os.Stderr, "something went wrong with xml export: %v\n", err)
+		os.Exit(1)
+	}
 }
