@@ -68,9 +68,16 @@ func (checklist *Checklist) countByStatus() map[string]int {
 }
 
 func main() {
+	args := os.Args
+
+	if len(args) < 2 {
+		_ = fmt.Errorf("usage: %s <ckl_file>", args[0])
+		return
+	}
+
 	var checklist Checklist
 
-	data, err := os.ReadFile("test_ckl.ckl")
+	data, err := os.ReadFile(args[1])
 	if err != nil {
 		_ = fmt.Errorf("something went wrong with file read: %v", err)
 	}
