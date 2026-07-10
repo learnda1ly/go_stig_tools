@@ -1,17 +1,36 @@
 package main
 
 type Stig struct {
-	StigName    string `json:"stig_name"`
-	DisplayName string `json:"display_name"`
-	Version     string `json:"version"`
-	StigID      string `json:"stig_id"`
-	ReleaseInfo string `json:"release_info"`
-	Uuid        string `json:"uuid"`
-	Size        int    `json:"size"`
-	Rules       []Rule `json:"rules"`
+	StigName    string     `json:"stig_name"`
+	DisplayName string     `json:"display_name"`
+	Version     string     `json:"version"`
+	StigID      string     `json:"stig_id"`
+	ReleaseInfo string     `json:"release_info"`
+	Uuid        string     `json:"uuid"`
+	Size        int        `json:"size"`
+	Rules       []StigRule `json:"rules"`
+	Title       string     `json:"title"`
+	Id          string     `json:"id"`
+	Active      bool       `json:"active"`
+	Mode        int        `json:"mode"`
+	HasPath     bool       `json:"has_path"`
+	CklbVersion string     `json:"cklb_version"`
+	TargetData  struct {
+		TargetType     string `json:"target_type"`
+		HostName       string `json:"host_name"`
+		IpAddress      string `json:"ip_address"`
+		MacAddress     string `json:"mac_address"`
+		Fqdn           string `json:"fqdn"`
+		Comments       string `json:"comments"`
+		Role           string `json:"role"`
+		IsWebDatabase  bool   `json:"is_web_database"`
+		TechnologyArea string `json:"technology_area"`
+		WebDbSite      string `json:"web_db_site"`
+		WebDbInstance  string `json:"web_db_instance"`
+	}
 }
 
-type Rule struct {
+type StigRule struct {
 	GroupId                  string   `json:"group_id"`
 	GroupIdSrc               string   `json:"group_id_src"`
 	Severity                 string   `json:"severity"`
@@ -45,8 +64,13 @@ type Rule struct {
 	FindingDetails           string   `json:"finding_details"`
 	GroupTree                []string `json:"group_tree"`
 	Status                   string   `json:"status"`
-	Overrides                struct{}
-	CheckContentRef          struct {
+	Overrides                struct {
+		Severity struct {
+			Severity string `json:"severity"`
+			Reason   string `json:"reason"`
+		}
+	}
+	CheckContentRef struct {
 		Name string `json:"name"`
 		Href string `json:"href"`
 	}

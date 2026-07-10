@@ -15411,7 +15411,12 @@
           "finding_details": "",
           "group_tree": [],
           "status": "not_reviewed",
-          "overrides": {}
+          "overrides": {
+            "severity": {
+              "severity": "low",
+              "reason": "Some Test Reason"
+            }
+          }
         },
         {
           "group_id": "V-268322",
@@ -15460,19 +15465,19 @@
   ],
   "title": "test_ckl",
   "id": "c4f6a115-e093-4185-bded-3064bc6ffc67",
-  "active": true,
+  "active": false,
   "mode": 2,
-  "has_path": false,
+  "has_path": true,
   "target_data": {
     "target_type": "Computing",
-    "host_name": "",
-    "ip_address": "",
-    "mac_address": "",
-    "fqdn": "",
+    "host_name": "FunnyBox",
+    "ip_address": "127.0.0.1",
+    "mac_address": "aa:bb:cc:dd:ee:88",
+    "fqdn": "FunnyBox.nobody.laughs.com",
     "comments": "",
-    "role": "None",
+    "role": "Workstation",
     "is_web_database": false,
-    "technology_area": "",
+    "technology_area": "Member Server",
     "web_db_site": "",
     "web_db_instance": ""
   },

@@ -56,7 +56,7 @@ type StigData struct {
 	AttributeData string `xml:"ATTRIBUTE_DATA"`
 }
 
-func (checklist *Checklist) countByStatus() map[string]int {
+func (checklist *XmlChecklist) countByStatus() map[string]int {
 	statusCounts := make(map[string]int)
 	for _, vuln := range checklist.Stigs[0].Vuln {
 		if statusCounts[vuln.Status] == 0 {
@@ -68,7 +68,7 @@ func (checklist *Checklist) countByStatus() map[string]int {
 	return statusCounts
 }
 
-func (checklist *Checklist) ExportToXML() error {
+func (checklist *XmlChecklist) ExportToXML() error {
 	xmlData, err := xml.MarshalIndent(checklist, "", "\t")
 	if err != nil {
 		return fmt.Errorf("something went wrong with xml marshal: %v", err)
@@ -80,14 +80,14 @@ func (checklist *Checklist) ExportToXML() error {
 
 	data = append(data, xmlData...)
 
-	err = os.WriteFile("output.ckl", data, 0644)
+	err = os.WriteFile("output.ckl", data, 0o644)
 	if err != nil {
 		return fmt.Errorf("something went wrong with file write: %v", err)
 	}
 	return nil
 }
 
-func (checklist *Checklist) ExportToJson() error {
+func (checklist *XmlChecklist) ExportToJson() error {
 	xmlData, err := xml.MarshalIndent(checklist, "", "\t")
 	if err != nil {
 		return fmt.Errorf("something went wrong with xml marshal: %v", err)
@@ -99,7 +99,7 @@ func (checklist *Checklist) ExportToJson() error {
 
 	data = append(data, xmlData...)
 
-	err = os.WriteFile("output.ckl", data, 0644)
+	err = os.WriteFile("output.ckl", data, 0o644)
 	if err != nil {
 		return fmt.Errorf("something went wrong with file write: %v", err)
 	}
@@ -131,7 +131,7 @@ func main() {
 
 	fmt.Printf("Open: %d Not Reviewed: %d Not Applicable: %d Not a Finding: %d\n", statusCounts["Open"], statusCounts["Not_Reviewed"], statusCounts["Not_Applicable"], statusCounts["NotAFinding"])
 
-	if err := checklist.exportToXML(); err != nil {
+	if err := checklist.ExportToXML(); err != nil {
 		fmt.Fprintf(os.Stderr, "something went wrong with xml export: %v\n", err)
 		os.Exit(1)
 	}
