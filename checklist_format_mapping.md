@@ -9,32 +9,207 @@ Two checklist formats both represent a STIG assessment result:
 The internal `Stig` struct is designed around the `.cklb` JSON shape, so `.ckl`
 XML must be unwound into key-value pairs and normalized during parsing.
 
-## Mermaid Diagram
+## Mermaid Diagrams
+
+### Asset / TargetData mapping
 
 ```mermaid
 flowchart LR
-    subgraph CKL["&lt;CHECKLIST&gt; (XML)"]
-        ASSET["&lt;ASSET&gt;"]
-        STIG_INFO["&lt;STIG_INFO&gt;\nkey-value pairs"]
-        VULN["&lt;VULN&gt;\nkey-value pairs + leaf elements"]
+    subgraph CKL[.ckl XML]
+        ASSET[ASSET]
+        ROLE[ROLE]
+        TYPE[ASSET_TYPE]
+        HOST[HOST_NAME]
+        IP[HOST_IP]
+        MAC[HOST_MAC]
+        FQDN[HOST_FQDN]
+        COMM[TARGET_COMMENT]
+        TECH[TECH_AREA]
+        WEB[WEB_OR_DATABASE]
+        SITE[WEB_DB_SITE]
+        INST[WEB_DB_INSTANCE]
     end
 
-    subgraph CKLB["checklist bundle (JSON)"]
-        STIGS["stigs[]"]
-        RULES["rules[]"]
+    subgraph JSON[.cklb JSON]
+        JTARGET[target_data]
+        JROLE[role]
+        JTYPE[target_type]
+        JHOST[host_name]
+        JIP[ip_address]
+        JMAC[mac_address]
+        JFQDN[fqdn]
+        JCOMM[comments]
+        JTECH[technology_area]
+        JWEB[is_web_database]
+        JSITE[web_db_site]
+        JINST[web_db_instance]
     end
 
-    subgraph STRUCT["Stig struct"]
-        S["Stig"]
-        TD["Stig.TargetData"]
-        SR["StigRule"]
+    subgraph GO[Go Stig.TargetData]
+        GROLE[Role]
+        GTYPE[TargetType]
+        GHOST[HostName]
+        GIP[IpAddress]
+        GMAC[MacAddress]
+        GFQDN[Fqdn]
+        GCOMM[Comments]
+        GTECH[TechnologyArea]
+        GWEB[IsWebDatabase]
+        GSITE[WebDbSite]
+        GINST[WebDbInstance]
     end
 
-    ASSET -->|field mapping| TD
-    STIG_INFO -->|key→field| S
-    VULN -->|key→field + leaf elements| SR
-    STIGS -->|1:1| S
-    RULES -->|1:1| SR
+    ROLE --> JROLE --> GROLE
+    TYPE --> JTYPE --> GTYPE
+    HOST --> JHOST --> GHOST
+    IP --> JIP --> GIP
+    MAC --> JMAC --> GMAC
+    FQDN --> JFQDN --> GFQDN
+    COMM --> JCOMM --> GCOMM
+    TECH --> JTECH --> GTECH
+    WEB --> JWEB --> GWEB
+    SITE --> JSITE --> GSITE
+    INST --> JINST --> GINST
+```
+
+### STIG_INFO to Stig (top-level fields)
+
+```mermaid
+flowchart LR
+    subgraph CKL[CKL STIG_INFO]
+        TITLE[title]
+        SID[stigid]
+        VER[version]
+        REL[releaseinfo]
+        UUID[uuid]
+    end
+
+    subgraph JSON[CKLB stigs array]
+        JTITLE[title]
+        JSID[stig_id]
+        JVER[version]
+        JREL[release_info]
+        JUUID[uuid]
+    end
+
+    subgraph GO[Go Stig]
+        GTITLE[Title]
+        GSID[StigID]
+        GVER[Version]
+        GREL[ReleaseInfo]
+        GUUID[Uuid]
+    end
+
+    TITLE --> JTITLE --> GTITLE
+    SID --> JSID --> GSID
+    VER --> JVER --> GVER
+    REL --> JREL --> GREL
+    UUID --> JUUID --> GUUID
+```
+
+### VULN / STIG_DATA to StigRule (scalar fields)
+
+```mermaid
+flowchart LR
+    subgraph CKL[CKL STIG_DATA attribute]
+        VNUM[Vuln_Num]
+        SEV[Severity]
+        GT[Group_Title]
+        RID[Rule_ID]
+        RV[Rule_Ver]
+        RT[Rule_Title]
+        VD[Vuln_Discuss]
+        CC[Check_Content]
+        FT[Fix_Text]
+        W[Weight]
+        CL[Class]
+        REF[STIGRef]
+        TK[TargetKey]
+        SUUID[STIG_UUID]
+    end
+
+    subgraph GO[Go StigRule]
+        GID[GroupId]
+        GSRC[GroupIdSrc]
+        SEVV[Severity]
+        GGT[GroupTitle]
+        RULEID[RuleId]
+        RULESRC[RuleIdSrc]
+        RVV[RuleVersion]
+        RTT[RuleTitle]
+        DISC[Discussion]
+        CHK[CheckContent]
+        FIX[FixText]
+        WGT[Weight]
+        CLS[Classification]
+        SREF[StigRef]
+        TKEY[TargetKey]
+        SU[StigUuid]
+    end
+
+    VNUM --> GID
+    VNUM --> GSRC
+    SEV --> SEVV
+    GT --> GGT
+    RID --> RULEID
+    RID --> RULESRC
+    RV --> RVV
+    RT --> RTT
+    VD --> DISC
+    CC --> CHK
+    FT --> FIX
+    W --> WGT
+    CL --> CLS
+    REF --> SREF
+    TK --> TKEY
+    SUUID --> SU
+```
+
+### VULN to StigRule (collected & leaf fields)
+
+```mermaid
+flowchart LR
+    subgraph CKL[CKL VULN elements]
+        LEGACY[LEGACY_ID repeated]
+        CCI[CCI_REF repeated]
+        STATUS_XML[STATUS]
+        FD_XML[FINDING_DETAILS]
+        CM_XML[COMMENTS]
+    end
+
+    subgraph GO[Go StigRule fields]
+        LEGS[LegacyIds]
+        CCIS[Ccis]
+        STAT[Status]
+        FD[FindingDetails]
+        CM[Comments]
+    end
+
+    LEGACY --> LEGS
+    CCI --> CCIS
+    STATUS_XML --> STAT
+    FD_XML --> FD
+    CM_XML --> CM
+```
+
+### Status casing normalization
+
+```mermaid
+flowchart LR
+    CKL_OPEN[Open]
+    CKL_NR[Not_Reviewed]
+    CKL_NAF[NotAFinding]
+    CKL_NA[Not_Applicable]
+
+    GO_OPEN[open]
+    GO_NR[not_reviewed]
+    GO_NAF[not_a_finding]
+    GO_NA[not_applicable]
+
+    CKL_OPEN --> GO_OPEN
+    CKL_NR --> GO_NR
+    CKL_NAF --> GO_NAF
+    CKL_NA --> GO_NA
 ```
 
 ## Format → Go struct mapping
