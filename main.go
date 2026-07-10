@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-type Checklist struct {
+type XmlChecklist struct {
 	XMLName xml.Name `xml:"CHECKLIST"`
 	Asset   Asset    `xml:"ASSET"`
 	Stigs   []Istig  `xml:"STIGS>iSTIG"`
@@ -68,7 +68,26 @@ func (checklist *Checklist) countByStatus() map[string]int {
 	return statusCounts
 }
 
-func (checklist *Checklist) exportToXML() error {
+func (checklist *Checklist) ExportToXML() error {
+	xmlData, err := xml.MarshalIndent(checklist, "", "\t")
+	if err != nil {
+		return fmt.Errorf("something went wrong with xml marshal: %v", err)
+	}
+
+	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<!--DISA STIG Viewer :: 2.18-->
+`)
+
+	data = append(data, xmlData...)
+
+	err = os.WriteFile("output.ckl", data, 0644)
+	if err != nil {
+		return fmt.Errorf("something went wrong with file write: %v", err)
+	}
+	return nil
+}
+
+func (checklist *Checklist) ExportToJson() error {
 	xmlData, err := xml.MarshalIndent(checklist, "", "\t")
 	if err != nil {
 		return fmt.Errorf("something went wrong with xml marshal: %v", err)
@@ -95,7 +114,7 @@ func main() {
 		return
 	}
 
-	var checklist Checklist
+	var checklist XmlChecklist
 
 	data, err := os.ReadFile(args[1])
 	if err != nil {
